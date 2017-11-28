@@ -1,5 +1,6 @@
 *.py[cod]
-
+docker.*
+data
 build
 devel
 
