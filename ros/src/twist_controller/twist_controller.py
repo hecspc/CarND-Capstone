@@ -1,4 +1,3 @@
-
 import rospy
 from pid import PID
 from yaw_controller import YawController
@@ -8,7 +7,7 @@ GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 STOP_VELOCITY = 0.277778 # 1 km/h
 
-class Controller(object):
+class TwistController(object):
     def __init__(self, vehicle_mass, fuel_capacity,
                  brake_deadband, decel_limit, accel_limit,
                  wheel_radius, wheel_base,
@@ -33,8 +32,17 @@ class Controller(object):
                                             max_lat_accel, max_steer_angle)
 
     def control(self, twist, current_velocity, dt):
+        """
+        twist is for the desired velocity
+        """
         # Return throttle, brake, steer
-        velocity_cte = twist.twist.linear.x - current_velocity.twist.linear.x
+        velocity_cte = abs(twist.twist.linear.x) - current_velocity.twist.linear.x
+        # much discussion that there might be a bug in pure_pursuit (waypoint_follower)
+        # that the twist.twist.linear might be negative:
+        # https://carnd.slack.com/archives/C6NVDVAQ3/p1512659466000795
+        # take abs to avoid the problem, assuming the magnitude is more reliable
+        # Verified with casual running the simulator, it showed no negative impact.
+
         acceleration = self.velocity_pid.step(velocity_cte, dt)
         steer = self.yaw_controller.get_steering(twist.twist.linear.x,
                                                  twist.twist.angular.z,
